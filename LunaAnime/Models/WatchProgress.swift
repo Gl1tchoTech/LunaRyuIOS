@@ -70,10 +70,9 @@ struct DownloadInfo: Identifiable, Hashable, Sendable {
     let season: Int
     let translation: Translation
     var state: DownloadState
-    var progress: Double            // 0...1
-    let bytesDownloaded: Int64
-    let totalBytes: Int64?
-    let localFileURL: URL?
+    var progress: Double            // 0...1    var bytesDownloaded: Int64
+        let totalBytes: Int64?
+        var localFileURL: URL?
     let failureMessage: String?
     let queuedAt: Date
 
