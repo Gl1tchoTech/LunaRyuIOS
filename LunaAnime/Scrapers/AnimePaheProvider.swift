@@ -12,31 +12,31 @@
 
 import Foundation
 
-public final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
+final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
 
-    public let id = "animepahe"
-    public let displayName = "AnimePahe"
-    public let iconSystemName = "sparkles"
-    public var capabilities: ProviderCapabilities { .all }
-    public var isOperational: Bool = true
+    let id = "animepahe"
+    let displayName = "AnimePahe"
+    let iconSystemName = "sparkles"
+    var capabilities: ProviderCapabilities { .all }
+    var isOperational: Bool = true
 
     private let base = "https://animepahe.com"
     private let http: HTTPClient
 
-    public init(httpClient: HTTPClient) {
+    init(httpClient: HTTPClient) {
         self.http = httpClient
     }
 
     // MARK: - Popular / recent
 
-    public func fetchPopular() async throws -> [AnimeSummary] {
+    func fetchPopular() async throws -> [AnimeSummary] {
         // AnimePahe homepage JSON API: release list.
         let req = HTTPRequest(url: URL(string: "\(base)/api?m=airing&page=1")!)
         let resp = try await http.decoded(AiringResponse.self, from: req)
         return resp.data?.compactMap { self.summarize(airing: $0) } ?? []
     }
 
-    public func fetchRecentEpisodes() async throws -> [Episode] {
+    func fetchRecentEpisodes() async throws -> [Episode] {
         let req = HTTPRequest(url: URL(string: "\(base)/api?m=airing&page=1")!)
         let airing = try await http.decoded(AiringResponse.self, from: req)
         let summaries = airing.data?.compactMap { self.summarize(airing: $0) } ?? []
@@ -48,21 +48,21 @@ public final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
         }
     }
 
-    public func search(query: String) async throws -> [AnimeSummary] {
+    func search(query: String) async throws -> [AnimeSummary] {
         guard !query.isEmpty else { return [] }
         let url = URL(string: "\(base)/api?m=search&q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!
         let resp = try await http.decoded(SearchResponse.self, from: HTTPRequest(url: url))
         return resp.data?.compactMap { self.summarize(search: $0) } ?? []
     }
 
-    public func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
+    func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
         let url = URL(string: "\(base)/anime/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url,
                                                    headers: ["Referer": base + "/"]))
         return try parseDetailPage(html: html, animeId: animeId)
     }
 
-    public func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
+    func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
         var page = 1
         var collected: [EpisodeStub] = []
         while true {
@@ -76,7 +76,7 @@ public final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
         return collected
     }
 
-    public func resolveStream(episodeId: String,
+    func resolveStream(episodeId: String,
                               translation: Translation) async throws -> [StreamSource] {
         // AnimePahe episode pages host "kwik.cx" iframe-style embed pages.
         // Resolution requires two HTTP hops: episode page → kwik page → final.
@@ -137,7 +137,7 @@ public final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
             alternateTitle: row.other_title,
             posterURL: row.poster.flatMap(URL.init(string:)),
             backdropURL: nil,
-            year: row.released?.prefix(4).flatMap { Int($0) },
+            year: row.released.flatMap { Int($0.prefix(4)) },
             episodeCount: row.episodes,
             type: AnimeType(rawValue: (row.type ?? "TV").lowercased()) ?? .tv,
             rating: row.score,
@@ -167,7 +167,7 @@ public final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
             .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? animeId
         let poster = Parser.attribute("src",
-                                      in: html.split(separator: "\"poster\"").first.map(String.init) ?? html)
+                                      in: html.components(separatedBy: "\"poster\"").first ?? html)
             .flatMap { URL(string: $0) }
         return AnimeDetails(
             id: animeId, providerId: id,

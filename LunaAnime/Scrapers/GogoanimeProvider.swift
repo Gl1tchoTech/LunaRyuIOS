@@ -11,26 +11,26 @@
 
 import Foundation
 
-public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
+final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
 
-    public let id = "gogoanime"
-    public let displayName = "Gogoanime"
-    public let iconSystemName = "play.rectangle.fill"
-    public var capabilities: ProviderCapabilities {
+    let id = "gogoanime"
+    let displayName = "Gogoanime"
+    let iconSystemName = "play.rectangle.fill"
+    var capabilities: ProviderCapabilities {
         [.search, .detailPage, .episodeListing, .subTranslation, .dubTranslation]
     }
-    public var isOperational: Bool = true
+    var isOperational: Bool = true
 
     private let base = "https://gogoanime.consumet.stream"
     private let http: HTTPClient
 
-    public init(httpClient: HTTPClient) {
+    init(httpClient: HTTPClient) {
         self.http = httpClient
     }
 
     // MARK: - Public protocol
 
-    public func fetchPopular() async throws -> [AnimeSummary] {
+    func fetchPopular() async throws -> [AnimeSummary] {
         let html = try await http.text(HTTPRequest(
             url: URL(string: "\(base)/popular")!,
             headers: ["Referer": base + "/"]
@@ -40,7 +40,7 @@ public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
             .map { summary(from: $0) }
     }
 
-    public func fetchRecentEpisodes() async throws -> [Episode] {
+    func fetchRecentEpisodes() async throws -> [Episode] {
         let html = try await http.text(HTTPRequest(
             url: URL(string: "\(base)")!,
             headers: ["Referer": base + "/"]
@@ -68,7 +68,7 @@ public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
         }
     }
 
-    public func search(query: String) async throws -> [AnimeSummary] {
+    func search(query: String) async throws -> [AnimeSummary] {
         guard !query.isEmpty else { return [] }
         let q = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let url = URL(string: "\(base)/search?keyword=\(q)")!
@@ -78,13 +78,13 @@ public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
             .map { summary(from: $0) }
     }
 
-    public func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
+    func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
         let url = URL(string: "\(base)/category/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url, headers: ["Referer": base + "/"]))
         return parseDetailPage(html: html, animeId: animeId)
     }
 
-    public func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
+    func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
         let url = URL(string: "\(base)/category/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url, headers: ["Referer": base + "/"]))
         let pattern = #"<a href=\"(/[\w-]+-episode-(\d+))\"#
@@ -102,7 +102,7 @@ public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
         }
     }
 
-    public func resolveStream(episodeId: String,
+    func resolveStream(episodeId: String,
                               translation: Translation) async throws -> [StreamSource] {
         let url = URL(string: "\(base)/\(episodeId)")!
         let html = try await http.text(HTTPRequest(url: url, headers: ["Referer": base + "/"]))

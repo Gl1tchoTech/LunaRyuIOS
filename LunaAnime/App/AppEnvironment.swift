@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import UIKit
 import Combine
 import CoreData
 
@@ -32,7 +33,7 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// Singleton-style shared live instance produced once at app launch.
-    static let live: AppEnvironment = {
+    @MainActor static let live: AppEnvironment = {
         let persistence = PersistenceController.shared
         let preferences = UserPreferencesStore.shared
         let httpClient = HTTPClient()

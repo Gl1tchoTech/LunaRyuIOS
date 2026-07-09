@@ -12,27 +12,27 @@
 
 import Foundation
 
-public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
+final class HianimeProvider: AnimeProvider, @unchecked Sendable {
 
-    public let id = "hianime"
-    public let displayName = "Hianime"
-    public let iconSystemName = "bolt.fill"
-    public var capabilities: ProviderCapabilities {
+    let id = "hianime"
+    let displayName = "Hianime"
+    let iconSystemName = "bolt.fill"
+    var capabilities: ProviderCapabilities {
         [.search, .detailPage, .episodeListing, .subTranslation, .dubTranslation]
     }
-    public var isOperational: Bool = true
+    var isOperational: Bool = true
 
     private let base = "https://hianime.to"
     private let ajaxBase = "https://hianime.to/ajax/v2"
     private let http: HTTPClient
 
-    public init(httpClient: HTTPClient) {
+    init(httpClient: HTTPClient) {
         self.http = httpClient
     }
 
     // MARK: - Public protocol
 
-    public func fetchPopular() async throws -> [AnimeSummary] {
+    func fetchPopular() async throws -> [AnimeSummary] {
         let url = URL(string: "\(base)/most-popular")!
         let html = try await http.text(HTTPRequest(url: url,
                                                    headers: ["Referer": base + "/"]))
@@ -40,7 +40,7 @@ public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
             .map { summary(from: $0) }
     }
 
-    public func fetchRecentEpisodes() async throws -> [Episode] {
+    func fetchRecentEpisodes() async throws -> [Episode] {
         let url = URL(string: "\(base)/recently-updated")!
         let html = try await http.text(HTTPRequest(url: url,
                                                    headers: ["Referer": base + "/"]))
@@ -65,7 +65,7 @@ public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
         }
     }
 
-    public func search(query: String) async throws -> [AnimeSummary] {
+    func search(query: String) async throws -> [AnimeSummary] {
         guard !query.isEmpty else { return [] }
         let url = URL(string: "\(base)/search?keyword=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!
         let html = try await http.text(HTTPRequest(url: url,
@@ -74,7 +74,7 @@ public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
             .map { summary(from: $0) }
     }
 
-    public func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
+    func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
         // Pretty page
         let url = URL(string: "\(base)/watch/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url,
@@ -82,7 +82,7 @@ public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
         return parseDetailPage(html: html, animeId: animeId)
     }
 
-    public func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
+    func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
         // AJAX endpoint: /ajax/v2/episode/list/<animeId>
         let url = URL(string: "\(ajaxBase)/episode/list/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url,
@@ -106,7 +106,7 @@ public final class HianimeProvider: AnimeProvider, @unchecked Sendable {
         }
     }
 
-    public func resolveStream(episodeId: String,
+    func resolveStream(episodeId: String,
                               translation: Translation) async throws -> [StreamSource] {
         // Stream: /ajax/v2/episode/sources/<episodeId>
         let serverURL = URL(string: "\(ajaxBase)/episode/sources/\(episodeId)")!

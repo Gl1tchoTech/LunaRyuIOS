@@ -46,7 +46,7 @@ enum ProviderError: LocalizedError, Sendable {
 
 // MARK: - Provider protocol
 
-public protocol AnimeProvider: Identifiable, Sendable {
+protocol AnimeProvider: Identifiable, Sendable {
     /// Stable, all-lowercase id, used to persist user choice.
     var id: String { get }
     /// Display name shown in Settings.
@@ -81,7 +81,7 @@ public protocol AnimeProvider: Identifiable, Sendable {
 
 // MARK: - Default implementations
 
-public extension AnimeProvider {
+extension AnimeProvider {
     /// Sub+both (sub always available; dub only if capability is set).
     var alwaysSupportedTranslations: [Translation] {
         var t: [Translation] = [.sub]
