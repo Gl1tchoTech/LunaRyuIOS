@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Adhoc-signed IPA; SideStore will re-sign with the user's Apple ID at install time. -->
+    <key>method</key>
+    <string>ad-hoc</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>stripSwiftSymbols</key>
+    <true/>
+    <key>uploadSymbols</key>
+    <false/>
+    <key>compileBitcode</key>
+    <false/>
+    <key>embedOnDemandResourcesAssetPacksInBundle</key>
+    <false/>
+    <key>onDemandResources</key>
+    <dict>
+        <key>enabled</key>
+        <false/>
+    </dict>
+    <key>teamID</key>
+    <string></string>
+    <key>destination</key>
+    <string>export</string>
+    <key>iCloudContainerEnvironment</key>
+    <string>Development</string>
+</dict>
+</plist>

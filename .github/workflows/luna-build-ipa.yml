@@ -1,0 +1,144 @@
+name: Build LunaRyu.ipa
+
+# Manual trigger (recommended) + every push that touches sources / project.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, Freebuff]
+    paths:
+      - "LunaAnime/**"
+      - "project.yml"
+      - "ExportOptions.plist"
+      - ".github/workflows/luna-build-ipa.yml"
+
+# One build, no concurrency key — we want a fresh IPA on every run.
+concurrency:
+  group: luna-build-ipa
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (arm64 device, adhoc for SideStore)
+    runs-on: macos-latest   # has Xcode 26 in 2026 (iOS 26 SDK)
+    timeout-minutes: 60
+
+    env:
+      SCHEME: LunaRyu
+      ARCHIVE: build/LunaRyu.xcarchive
+      EXPORT_DIR: build/ipa
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          echo
+          echo "Available Xcodes:"
+          ls -d /Applications/Xcode*.app 2>/dev/null || true
+
+      - name: Select Xcode 26 (fall back to whatever is default)
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | head -1)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(xcode-select -p)
+            echo "No Xcode 26.x found, using default at: $XCODE_PATH"
+          else
+            echo "Selecting Xcode 26 at: $XCODE_PATH"
+            sudo xcode-select -s "$XCODE_PATH"
+          fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Xcode project from project.yml
+        run: xcodegen generate --spec project.yml --no-env
+
+      - name: Clean build dir
+        run: rm -rf build && mkdir -p build
+
+      - name: xcodebuild archive
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project "${SCHEME}.xcodeproj" \
+            -scheme "${SCHEME}" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "${ARCHIVE}" \
+            -derivedDataPath build/derivedData \
+            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="arm64" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            MARKETING_VERSION="1.0.0" \
+            CURRENT_PROJECT_VERSION="1" \
+            archive 2>&1 | tee build/xcodebuild-archive.log
+          echo "---- archive summary ----"
+          ls -la "${ARCHIVE}/Products/Applications/" || true
+
+      - name: Export IPA (adhoc, for SideStore re-sign)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -exportArchive \
+            -archivePath "${ARCHIVE}" \
+            -exportPath "${EXPORT_DIR}" \
+            -exportOptionsPlist ExportOptions.plist 2>&1 | tee build/xcodebuild-export.log
+          echo "---- export summary ----"
+          ls -la "${EXPORT_DIR}/"
+
+      - name: Rename exported IPA to LunaRyu.ipa
+        # Xcode names the .ipa after the scheme (LunaRyu.app -> LunaRyu.ipa by default),
+        # but be defensive in case the configuration name is included.
+        run: |
+          shopt -s nullglob
+          any_ipa=$(ls "${EXPORT_DIR}/"*.ipa 2>/dev/null | head -1)
+          if [ -z "$any_ipa" ]; then
+            echo "::error::No IPA found in ${EXPORT_DIR}"
+            exit 1
+          fi
+          echo "Found: $any_ipa"
+          if [ "$any_ipa" != "${EXPORT_DIR}/LunaRyu.ipa" ]; then
+            mv "$any_ipa" "${EXPORT_DIR}/LunaRyu.ipa"
+          fi
+          echo "Final artifact path: ${EXPORT_DIR}/LunaRyu.ipa"
+          ls -la "${EXPORT_DIR}/LunaRyu.ipa"
+          file "${EXPORT_DIR}/LunaRyu.ipa"
+          du -h "${EXPORT_DIR}/LunaRyu.ipa"
+
+      - name: Upload artifact (LunaRyu.ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LunaRyu.ipa
+          path: build/ipa/LunaRyu.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build logs (diagnostics)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build/xcodebuild-archive.log
+            build/xcodebuild-export.log
+          if-no-files-found: ignore
+          retention-days: 7
