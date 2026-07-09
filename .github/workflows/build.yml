@@ -1,0 +1,110 @@
+# GitHub Actions workflow modeled on cranci1/Luna's build.yml,
+# adapted for the LunaAnime SwiftUI app and renamed artifact to LunaRyu.ipa.
+#
+# Triggers: manual (workflow_dispatch) and pushes to Freebuff or main that
+# touch the source code or any of the build inputs.
+
+name: Build LunaRyu.ipa
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [Freebuff, main]
+    paths:
+      - "LunaAnime/**"
+      - "project.yml"
+      - "ipabuild.sh"
+      - ".github/workflows/build.yml"
+
+concurrency:
+  group: luna-build-ipa
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build iOS LunaRyu.ipa
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version || true
+          ls -d /Applications/Xcode*.app 2>/dev/null || true
+
+      - name: Select Xcode (latest installed on runner)
+        run: |
+          XCODE_PATH=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(xcode-select -p)
+          fi
+          echo "==> Using Xcode at $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH"
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Luna.xcodeproj from project.yml
+        run: xcodegen generate --spec project.yml --no-env
+        # ^ This produces a real Xcode project file pre-templated with our
+        #   (me.cranci.sigma6741) bundle ID, scheme `Luna`, deployment
+        #   target 15.0, etc. — modeled on cranci1/Luna's project file
+        #   settings, but built from our LunaAnime/ source tree without
+        #   any SwiftPM packages.
+
+      - name: Build IPA
+        run: |
+          chmod +x ./ipabuild.sh
+          ./ipabuild.sh
+
+      - name: Rename Luna.ipa → LunaRyu.ipa
+        run: |
+          if [ ! -f build/Luna.ipa ]; then
+            echo "::error::build/Luna.ipa not found after ipabuild.sh"
+            exit 1
+          fi
+          mv build/Luna.ipa build/LunaRyu.ipa
+          ls -la build/
+          file build/LunaRyu.ipa
+          du -h build/LunaRyu.ipa
+
+      - name: Verify IPA contains our bundle resources
+        run: |
+          unzip -l build/LunaRyu.ipa | head -40
+          echo "---- Info.plist keys ----"
+          unzip -p build/LunaRyu.ipa "Payload/Luna.app/Info.plist" \
+            | plutil -p - | grep -E 'CFBundleIdentifier|CFBundleName|CFBundleDisplayName|CFBundleShortVersionString|CFBundleVersion|MinimumOSVersion'
+          echo "---- Provisioning / signing ----"
+          unzip -l build/LunaRyu.ipa | grep -E '(_CodeSignature|embedded\.mobileprovision|PkgInfo)' || true
+
+      - name: Upload LunaRyu.ipa (the artifact you'll SideStore-install)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LunaRyu.ipa
+          path: build/LunaRyu.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs (for diagnostics)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build/xcodebuild-archive.log
+          if-no-files-found: ignore
+          retention-days: 7
