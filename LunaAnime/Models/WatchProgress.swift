@@ -74,7 +74,7 @@ struct DownloadInfo: Identifiable, Hashable, Sendable {
     var bytesDownloaded: Int64
     var totalBytes: Int64?
     var localFileURL: URL?
-    let failureMessage: String?
+    var failureMessage: String?
     let queuedAt: Date
 
     var formattedProgress: String { "\(Int(progress * 100))%" }
