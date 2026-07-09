@@ -81,7 +81,7 @@ final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
     func fetchAnimeDetails(animeId: String) async throws -> AnimeDetails {
         let url = URL(string: "\(base)/category/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url, headers: ["Referer": base + "/"]))
-        return parseDetailPage(html: html, animeId: animeId)
+        return try parseDetailPage(html: html, animeId: animeId)
     }
 
     func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {

@@ -38,7 +38,7 @@ final class DownloadManager: NSObject {
     /// Active AVAsset (HLS) download tasks keyed by episodeId.
     private var hlsTasks: [String: AVAssetDownloadTask] = [:]
 
-    private struct TaskHandle {
+    struct TaskHandle {
         let stream: StreamSource
         let anime: AnimeSummary
         let episode: Episode
@@ -383,7 +383,7 @@ extension DownloadManager: AVAssetDownloadDelegate {
         }
     }
 
-    private func activeEpisodeId(for task: AVAssetDownloadTask) -> String {
+    private nonisolated func activeEpisodeId(for task: AVAssetDownloadTask) -> String {
         hlsTasks.first(where: { $0.value === task })?.key ?? ""
     }
 

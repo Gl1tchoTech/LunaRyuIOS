@@ -47,9 +47,6 @@ struct HomeView: View {
         .navigationDestination(for: AnimeSummary.self) { anime in
             AnimeDetailView(anime: anime)
         }
-        .navigationDestination(for: AnimeSummary.self, anchor: .center) { anime in
-            AnimeDetailView(anime: anime)
-        }
     }
 
     private var errorBanner: some View {

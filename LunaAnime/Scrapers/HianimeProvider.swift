@@ -79,7 +79,7 @@ final class HianimeProvider: AnimeProvider, @unchecked Sendable {
         let url = URL(string: "\(base)/watch/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url,
                                                    headers: ["Referer": base + "/"]))
-        return parseDetailPage(html: html, animeId: animeId)
+        return try parseDetailPage(html: html, animeId: animeId)
     }
 
     func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
