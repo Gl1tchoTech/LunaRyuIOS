@@ -46,6 +46,13 @@ targets:
         INFOPLIST_FILE: LunaAnime/App/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Don't thin the AppIcon during release archive: the 1024x1024
+        # marketing image is the only size we ship, and Apple's asset
+        # catalog compiler otherwise drops it as "not applicable to any
+        # device class", producing
+        #   Error: ...app icon set named "AppIcon" did not have any
+        #          applicable content.
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         ENABLE_PREVIEWS: YES
         # Adhoc signing for SideStore re-sign.
         CODE_SIGN_IDENTITY: ""
