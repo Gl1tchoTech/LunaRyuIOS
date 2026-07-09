@@ -232,23 +232,25 @@ extension DownloadManager: URLSessionDownloadDelegate {
                                       written: totalBytesWritten,
                                       total: totalBytesExpectedToWrite)
         }
-    }        nonisolated func urlSession(_ session: URLSession,
-                                    task: URLSessionTask,
-                                    didCompleteWithError error: Error?) {
-            if task is AVAssetDownloadTask {
-                if let error = error {
-                    Task { @MainActor in self.handleHLSError(error: error) }
-                }
-            } else {
-                let id = task.taskIdentifier
-                Task { @MainActor in
-                    if let error = error as NSError? {
-                        self.handleDirectError(taskId: id, error: error)
-                    }
+    }
+
+    nonisolated func urlSession(_ session: URLSession,
+                                task: URLSessionTask,
+                                didCompleteWithError error: Error?) {
+        if task is AVAssetDownloadTask {
+            if let error = error {
+                Task { @MainActor in self.handleHLSError(error: error) }
+            }
+        } else {
+            let id = task.taskIdentifier
+            Task { @MainActor in
+                if let error = error as NSError? {
+                    self.handleDirectError(taskId: id, error: error)
                 }
             }
         }
     }
+}
 
 extension DownloadManager {
     fileprivate func notifyDirectProgress(taskId: Int, written: Int64, total: Int64) {
@@ -377,10 +379,9 @@ extension DownloadManager: AVAssetDownloadDelegate {
         }
     }
 
-        // (AVAssetDownloadDelegate inherits URLSessionTaskDelegate;
-        //  didCompleteWithError is handled once, above, in
-        //  URLSessionDownloadDelegate's extension.)
-    }
+    // Note: AVAssetDownloadDelegate inherits URLSessionTaskDelegate,
+    // so urlSession(_:task:didCompleteWithError:) is satisfied once,
+    // by the URLSessionDownloadDelegate implementation above.
 
     private nonisolated func activeEpisodeId(for task: AVAssetDownloadTask) -> String {
         hlsTasks.first(where: { $0.value === task })?.key ?? ""
