@@ -60,18 +60,23 @@ targets:
       - sdk: CoreData.framework
       - sdk: UniformTypeIdentifiers.framework
       - sdk: BackgroundTasks.framework
-  schemes:
-    Luna:
-      build:
-        targets:
-          Luna: all
-      run:
-        config: Debug
-      archive:
-        config: Release
-      profile:
-        config: Release
-      analyze:
-        config: Debug
-      test:
-        config: Debug
+
+# Schemes live at the TOP LEVEL of the project spec, not under targets/.
+# (Previous version nested them under `targets:` which made XcodeGen parse
+# `schemes` as a second target with no platform, hence "Unknown Target
+# platform:" failure.)
+schemes:
+  Luna:
+    build:
+      targets:
+        Luna: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    test:
+      config: Debug
