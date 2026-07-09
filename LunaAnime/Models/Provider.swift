@@ -28,3 +28,4 @@ struct ProviderCapabilities: OptionSet, Codable, Sendable, Hashable {
 
     /// True if this provider cannot resolve playable streams.
     var isCatalogOnly: Bool { contains(.catalogOnly) }
+}
