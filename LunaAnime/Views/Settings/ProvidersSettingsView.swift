@@ -22,7 +22,7 @@ struct ProvidersSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                ForEach(AppEnvironment.live.scraperRegistry.providers) { provider in
+                ForEach(Array(AppEnvironment.live.scraperRegistry.providers.enumerated()), id: \.offset) { _, provider in
                     providerCell(provider)
                 }
             }
@@ -32,7 +32,7 @@ struct ProvidersSettingsView: View {
         .navigationTitle("Anime Providers")
     }
 
-    private func providerCell(_ provider: AnimeProvider) -> some View {
+    private func providerCell(_ provider: any AnimeProvider) -> some View {
         let isActive = vm.activeProviderId == provider.id
         return Button {
             vm.activeProviderId = provider.id

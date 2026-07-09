@@ -164,9 +164,9 @@ struct SettingsView: View {
         .padding(.horizontal, 16)
     }
 
-    private func settingsRow(title: String,
+    private func settingsRow<Trailing: View>(title: String,
                              icon: String,
-                             trailing: AnyView) -> some View {
+                             trailing: Trailing) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.subheadline)

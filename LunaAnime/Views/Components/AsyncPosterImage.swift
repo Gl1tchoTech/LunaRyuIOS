@@ -23,7 +23,7 @@ struct AsyncPosterImage: View {
                     case .success(let image):
                         image
                             .resizable()
-                            .aspectRatio(fill ? contentMode : .fill, contentMode: fill ? .fill : .fill)
+                            .aspectRatio(contentMode: fill ? .fill : .fit)
                             .clipped()
                     case .failure:
                         placeholder
