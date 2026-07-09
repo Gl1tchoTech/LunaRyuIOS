@@ -17,7 +17,9 @@ final class AnimePaheProvider: AnimeProvider, @unchecked Sendable {
     let id = "animepahe"
     let displayName = "AnimePahe"
     let iconSystemName = "sparkles"
-    var capabilities: ProviderCapabilities { .all }
+    var capabilities: ProviderCapabilities {
+        [.search, .detailPage, .episodeListing, .subTranslation, .directDownload]
+    }
     var isOperational: Bool = true
 
     private let base = "https://animepahe.com"

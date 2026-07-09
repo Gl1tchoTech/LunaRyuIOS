@@ -16,9 +16,15 @@ struct ProviderCapabilities: OptionSet, Codable, Sendable, Hashable {
     static let subTranslation = ProviderCapabilities(rawValue: 1 << 3)
     static let dubTranslation = ProviderCapabilities(rawValue: 1 << 4)
     static let directDownload = ProviderCapabilities(rawValue: 1 << 5)
+    /// Provider returns metadata (titles, posters, ratings) but no
+    /// playable streams. UI should label these clearly so users know
+    /// playback requires a stream-capable provider.
+    static let catalogOnly    = ProviderCapabilities(rawValue: 1 << 6)
 
     static let all: ProviderCapabilities = [
         .search, .detailPage, .episodeListing,
         .subTranslation, .dubTranslation, .directDownload
     ]
-}
+
+    /// True if this provider cannot resolve playable streams.
+    var isCatalogOnly: Bool { contains(.catalogOnly) }

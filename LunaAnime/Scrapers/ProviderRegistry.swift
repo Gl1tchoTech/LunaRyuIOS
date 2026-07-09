@@ -2,8 +2,14 @@
 //  ProviderRegistry.swift
 //  LunaAnime
 //
-//  Concrete registry of every AnimeProvider the app ships with, plus
-//  a circuit-breaker so a single broken provider doesn't take down the app.
+//  Concrete registry of every AnimeProvider the app ships with, plus a
+//  circuit-breaker so a single broken provider doesn't take down the app.
+//
+//  v2 (2026): Gogoanime / Hianime removed (both endpoints defunct in 2026).
+//  Replaced with three stable catalog-only metadata providers (AniList via
+//  GraphQL, JIKAN v4 over MAL, Kitsu REST) plus AnimePahe as the single
+//  experimental stream source.
+//
 //
 
 import Foundation
@@ -14,6 +20,10 @@ final class ProviderRegistry: ObservableObject {
 
     @Published private(set) var providers: [any AnimeProvider]
     @Published var activeProviderId: String
+    /// Provider ids that have failed a recent ping and should be surfaced
+    /// as unavailable in the Settings UI. The full list of providers
+    /// remains selectable, but the user gets a "Currently unavailable" pill.
+    @Published private(set) var unavailable: Set<String> = []
 
     private let httpClient: HTTPClient
     private let preferences: UserPreferencesStore
@@ -23,6 +33,7 @@ final class ProviderRegistry: ObservableObject {
     private var failureCount: [String: Int] = [:]
     private var lastFailure: [String: Date] = [:]
     private var circuitOpen: Set<String> = []
+    private var pingTask: Task<Void, Never>?
 
     init(providers: [any AnimeProvider],
          httpClient: HTTPClient,
@@ -32,21 +43,23 @@ final class ProviderRegistry: ObservableObject {
         self.preferences = preferences
         self.activeProviderId = preferences.activeProviderId
             ?? providers.first?.id
-            ?? "animepahe"
+            ?? "anilist"
     }
 
     static func preconfigured(httpClient: HTTPClient,
                               preferences: UserPreferencesStore) -> ProviderRegistry {
         let providers: [any AnimeProvider] = [
-            AnimePaheProvider(httpClient: httpClient),
-            GogoanimeProvider(httpClient: httpClient),
-            HianimeProvider(httpClient: httpClient)
+            AniListProvider(httpClient: httpClient),
+            JIKANProvider(httpClient: httpClient),
+            KitsuProvider(httpClient: httpClient),
+            AnimePaheProvider(httpClient: httpClient)
         ]
         let registry = ProviderRegistry(
             providers: providers,
             httpClient: httpClient,
             preferences: preferences
         )
+        registry.runStartupPings()
         return registry
     }
 
@@ -66,6 +79,40 @@ final class ProviderRegistry: ObservableObject {
         providers.first { $0.id == id }
     }
 
+    func isAvailable(_ provider: any AnimeProvider) -> Bool {
+        !unavailable.contains(provider.id)
+    }
+
+    // MARK: - Startup ping
+
+    /// At app launch, fire a single non-blocking ping against every
+    /// provider. Successful pings clear any prior unavailability; failed
+    /// pings add the provider to the `unavailable` set so Settings can
+    /// badge it.
+    func runStartupPings() {
+        pingTask?.cancel()
+        pingTask = Task { [weak self] in
+            guard let self else { return }
+            // Snapshot to avoid Sendable warnings about capturing self.
+            let snapshot = self.providers
+            await withTaskGroup(of: (String, Bool).self) { group in
+                for provider in snapshot {
+                    group.addTask { (provider.id, await provider.ping()) }
+                }
+                for await (id, ok) in group {
+                    await MainActor.run {
+                        if ok {
+                            self.unavailable.remove(id)
+                        } else {
+                            self.unavailable.insert(id)
+                            Log.warn(.scraper, "Startup ping failed for provider \(id).")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Circuit breaker
 
     /// Records a successful call for a provider, closing any open circuit.
@@ -83,6 +130,7 @@ final class ProviderRegistry: ObservableObject {
 
         if (failureCount[providerId] ?? 0) >= failureThreshold {
             circuitOpen.insert(providerId)
+            unavailable.insert(providerId)
             Log.warn(.scraper, "Circuit OPEN for provider \(providerId) after \(failureCount[providerId] ?? 0) failures.")
         }
     }

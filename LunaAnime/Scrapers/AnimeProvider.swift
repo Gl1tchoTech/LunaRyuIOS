@@ -94,4 +94,26 @@ extension AnimeProvider {
             throw ProviderError.unsupportedCapability
         }
     }
+
+    /// Optional end-to-end connectivity probe. Default implementation
+    /// hits `fetchPopular()` with a short timeout and tolerates empty
+    /// results — only HARD network/decode errors are treated as failure.
+    /// Providers override this when they have a cheaper ping endpoint.
+    func ping() async -> Bool {
+        do {
+            _ = try await fetchPopular()
+            return true
+        } catch {
+            // Network/SSL/JSON-only failures count; "empty result" doesn't.
+            if let e = error as? ProviderError {
+                switch e {
+                case .unsupportedCapability: return true
+                case .notFound:              return true
+                case .notConfigured:         return true
+                default:                     return false
+                }
+            }
+            return false
+        }
+    }
 }
