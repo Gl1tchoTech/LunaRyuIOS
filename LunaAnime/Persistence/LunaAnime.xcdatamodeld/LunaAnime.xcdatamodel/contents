@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22154" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="Anime" representedClassName="AnimeEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="addedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="alternateTitle" optional="YES" attributeType="String"/>
+        <attribute name="animeId" attributeType="String"/>
+        <attribute name="backdropURL" optional="YES" attributeType="URI"/>
+        <attribute name="isHiddenFromContinue" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="posterURL" optional="YES" attributeType="URI"/>
+        <attribute name="providerId" attributeType="String"/>
+        <attribute name="statusRaw" optional="YES" attributeType="String"/>
+        <attribute name="synopsis" optional="YES" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <attribute name="typeRaw" optional="YES" attributeType="String"/>
+        <attribute name="year" optional="YES" attributeType="Integer 32" usesScalarValueType="YES"/>
+        <relationship name="episodes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Episode" inverseName="anime" inverseEntity="Episode"/>
+    </entity>
+    <entity name="Episode" representedClassName="EpisodeEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="durationSeconds" optional="YES" attributeType="Double" usesScalarValueType="YES"/>
+        <attribute name="episodeId" attributeType="String"/>
+        <attribute name="lastSelectedTranslationRaw" optional="YES" attributeType="String"/>
+        <attribute name="lastWatched" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="number" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="positionSeconds" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="season" attributeType="Integer 32" defaultValueString="1" usesScalarValueType="YES"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <relationship name="anime" maxCount="1" deletionRule="Nullify" destinationEntity="Anime" inverseName="episodes" inverseEntity="Anime"/>
+        <relationship name="downloadedFiles" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DownloadedFile" inverseName="episode" inverseEntity="DownloadedFile"/>
+    </entity>
+    <entity name="DownloadedFile" representedClassName="DownloadedFileEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="bytes" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="completedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="formatRaw" attributeType="String"/>
+        <attribute name="localPath" attributeType="String"/>
+        <attribute name="quality" optional="YES" attributeType="String"/>
+        <attribute name="sourceURLString" attributeType="String"/>
+        <attribute name="translationRaw" attributeType="String"/>
+        <relationship name="episode" maxCount="1" deletionRule="Nullify" destinationEntity="Episode" inverseName="downloadedFiles" inverseEntity="Episode"/>
+    </entity>
+</model>

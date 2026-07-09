@@ -1,0 +1,58 @@
+# Xcode / Swift
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+.build/
+*.swp
+*.lock
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+
+# CocoaPods / Swift Package Manager
+Pods/
+.swiftpm/
+Package.resolved
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS / DMG noise
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.dtors
+
+# User-specific Xcode files
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Misc
+*.log
+*.tmp
+.env
+.env.*
+!.env.example
+
+# LunaAnime-specific: never commit Secret keys that the user adds at runtime.
+
+# Builds/releases
+*.ipa
+*.dSYM.zip
+*.dSYM
