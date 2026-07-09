@@ -14,6 +14,7 @@ struct LunaAnimeApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var appEnvironment = AppEnvironment.live
 
+    @MainActor
     init() {
         // Configure global app-wide appearance once at startup.
         AppearanceConfigurator.configureGlobalAppearance()

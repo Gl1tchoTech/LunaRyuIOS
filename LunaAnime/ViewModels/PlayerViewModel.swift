@@ -216,10 +216,9 @@ final class PlayerViewModel: ObservableObject {
     }
 
     deinit {
-        if let observer = timeObserver {
-            // AVPlayer observers must be removed on the actor they were created on;
-            // since player is captured by VM (main actor), this is best-effort.
-            player.removeTimeObserver(observer)
-        }
+        // Player cleanup is best-effort and happens implicitly when the VM
+        // is released (AVPlayer is reference-counted and tears down its
+        // observers on dealloc). We intentionally avoid dereferencing
+        // main-actor-isolated state from this nonisolated deinit.
     }
 }

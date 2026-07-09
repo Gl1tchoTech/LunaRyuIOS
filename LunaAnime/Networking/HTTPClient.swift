@@ -8,13 +8,13 @@
 
 import Foundation
 
-public struct HTTPRequest {
-    public let url: URL
-    public var method: String = "GET"
-    public var headers: [String: String] = [:]
-    public var body: Data? = nil
+struct HTTPRequest {
+    let url: URL
+    var method: String = "GET"
+    var headers: [String: String] = [:]
+    var body: Data? = nil
 
-    public init(url: URL,
+    init(url: URL,
                 method: String = "GET",
                 headers: [String: String] = [:],
                 body: Data? = nil) {
@@ -25,34 +25,34 @@ public struct HTTPRequest {
     }
 }
 
-public enum HTTPMethod: String {
+enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
 }
 
-public protocol HTTPClientProtocol {
+protocol HTTPClientProtocol {
     func send(_ request: HTTPRequest) async throws -> (Data, HTTPURLResponse)
     func text(_ request: HTTPRequest) async throws -> String
     func decoded<T: Decodable>(_ type: T.Type, from request: HTTPRequest) async throws -> T
 }
 
-public final class HTTPClient: HTTPClientProtocol {
+final class HTTPClient: HTTPClientProtocol {
     private let session: URLSession
     private let preferredUserAgent: String
 
-    public init(session: URLSession = HTTPClient.makeSession(),
-                userAgent: String = HTTPClient.defaultUserAgent) {
+    init(session: URLSession = HTTPClient.makeSession(),
+         userAgent: String = HTTPClient.defaultUserAgent) {
         self.session = session
         self.preferredUserAgent = userAgent
     }
 
-    public static var defaultUserAgent: String {
+    static var defaultUserAgent: String {
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) "
             + "AppleWebKit/605.1.15 (KHTML, like Gecko) "
             + "Version/17.4 Mobile/15E148 Safari/604.1"
     }
 
-    public static func makeSession() -> URLSession {
+    static func makeSession() -> URLSession {
         let cfg = URLSessionConfiguration.default
         cfg.httpAdditionalHeaders = [
             "Accept": "application/json, text/plain, text/html, */*",
@@ -66,7 +66,7 @@ public final class HTTPClient: HTTPClientProtocol {
         return URLSession(configuration: cfg)
     }
 
-    public func send(_ request: HTTPRequest) async throws -> (Data, HTTPURLResponse) {
+    func send(_ request: HTTPRequest) async throws -> (Data, HTTPURLResponse) {
         var urlReq = URLRequest(url: request.url)
         urlReq.httpMethod = request.method
         urlReq.httpBody = request.body
@@ -91,13 +91,13 @@ public final class HTTPClient: HTTPClientProtocol {
         return (data, http)
     }
 
-    public func text(_ request: HTTPRequest) async throws -> String {
+    func text(_ request: HTTPRequest) async throws -> String {
         let (data, _) = try await send(request)
         let enc = String.Encoding.utf8
         return String(data: data, encoding: enc) ?? ""
     }
 
-    public func decoded<T: Decodable>(_ type: T.Type, from request: HTTPRequest) async throws -> T {
+    func decoded<T: Decodable>(_ type: T.Type, from request: HTTPRequest) async throws -> T {
         let (data, _) = try await send(request)
         do {
             return try JSONDecoder().decode(T.self, from: data)

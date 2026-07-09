@@ -12,7 +12,7 @@ import Combine
 @MainActor
 final class ProviderRegistry: ObservableObject {
 
-    @Published private(set) var providers: [AnimeProvider]
+    @Published private(set) var providers: [any AnimeProvider]
     @Published var activeProviderId: String
 
     private let httpClient: HTTPClient
@@ -24,7 +24,7 @@ final class ProviderRegistry: ObservableObject {
     private var lastFailure: [String: Date] = [:]
     private var circuitOpen: Set<String> = []
 
-    init(providers: [AnimeProvider],
+    init(providers: [any AnimeProvider],
          httpClient: HTTPClient,
          preferences: UserPreferencesStore) {
         self.providers = providers
@@ -37,7 +37,7 @@ final class ProviderRegistry: ObservableObject {
 
     static func preconfigured(httpClient: HTTPClient,
                               preferences: UserPreferencesStore) -> ProviderRegistry {
-        let providers: [AnimeProvider] = [
+        let providers: [any AnimeProvider] = [
             AnimePaheProvider(httpClient: httpClient),
             GogoanimeProvider(httpClient: httpClient),
             HianimeProvider(httpClient: httpClient)
@@ -52,7 +52,7 @@ final class ProviderRegistry: ObservableObject {
 
     // MARK: - Selection
 
-    var activeProvider: AnimeProvider? {
+    var activeProvider: (any AnimeProvider)? {
         providers.first { $0.id == activeProviderId }
     }
 
@@ -62,7 +62,7 @@ final class ProviderRegistry: ObservableObject {
         preferences.activeProviderId = id
     }
 
-    func provider(id: String) -> AnimeProvider? {
+    func provider(id: String) -> (any AnimeProvider)? {
         providers.first { $0.id == id }
     }
 
@@ -87,7 +87,7 @@ final class ProviderRegistry: ObservableObject {
         }
     }
 
-    func providerIsReachable(_ provider: AnimeProvider) -> Bool {
+    func providerIsReachable(_ provider: any AnimeProvider) -> Bool {
         if circuitOpen.contains(provider.id),
            let last = lastFailure[provider.id],
            Date().timeIntervalSince(last) >= recoveryInterval {
@@ -99,8 +99,8 @@ final class ProviderRegistry: ObservableObject {
 
     /// Execute a provider call with circuit-breaker semantics.
     /// If the circuit is open and `fallback` is provided, the fallback runs.
-    func execute<T>(_ operation: (AnimeProvider) async throws -> T,
-                    fallback: ((AnimeProvider) async throws -> T)? = nil) async throws -> T {
+    func execute<T>(_ operation: (any AnimeProvider) async throws -> T,
+                    fallback: ((any AnimeProvider) async throws -> T)? = nil) async throws -> T {
         guard let active = activeProvider else { throw ProviderError.notConfigured }
         if !providerIsReachable(active) {
             Log.warn(.scraper, "Skipping provider \(active.id) — circuit open.")
