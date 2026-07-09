@@ -87,7 +87,7 @@ public final class GogoanimeProvider: AnimeProvider, @unchecked Sendable {
     public func fetchEpisodes(animeId: String) async throws -> [EpisodeStub] {
         let url = URL(string: "\(base)/category/\(animeId)")!
         let html = try await http.text(HTTPRequest(url: url, headers: ["Referer": base + "/"]))
-        let pattern = #"<a href=\"(/[\w-]+-episode-(\d+))\""
+        let pattern = #"<a href=\"(/[\w-]+-episode-(\d+))\"#
         let matches = Parser.allCaptureGroups(of: pattern, in: html, groupIdx: 1)
         let numbers = Parser.allCaptureGroups(of: pattern, in: html, groupIdx: 2).compactMap(Int.init)
         return zip(matches, numbers).map { (href, num) in
